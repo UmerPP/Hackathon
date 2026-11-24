@@ -174,6 +174,23 @@ class CampusTests(unittest.TestCase):
             self.assertEqual(send.call_args.kwargs["to_addrs"],["user10@example.org"])
             self.assertNotIn("Main Gate",send.call_args.args[0].get_content())
 
+    def test_alert_uses_registered_address_before_email_verification(self):
+        self.app.config["SETTINGS"].write_text(json.dumps({
+            "smtp_user":"sender@example.org","smtp_app_password":"test",
+            "department_emails":{"CSE":"fallback@example.org"},
+        }))
+        self.report("CSE lab projector has stopped",dept="CSE")
+        with self.app.app_context():
+            run("UPDATE users SET email_verified=0 WHERE id=5")
+            run("INSERT INTO users(name,role,dept,approved) VALUES('pending@example.org','Staff','CSE',0)")
+            db().commit()
+            with patch("integrations.smtplib.SMTP_SSL") as smtp:
+                smtp.return_value.send_message.return_value={}
+                self.assertTrue(deliver_one())
+                self.assertFalse(deliver_one())
+                self.assertEqual(smtp.return_value.send_message.call_args.kwargs["to_addrs"],["user5@example.org"])
+                self.assertEqual(one("SELECT state FROM alerts")["state"],"sent")
+
     def test_gmail_auth_rejection_has_actionable_message(self):
         from smtplib import SMTPAuthenticationError
         self.app.config["SETTINGS"].write_text(json.dumps({
@@ -384,8 +401,10 @@ class ReleaseWorkflowTests(unittest.TestCase):
             while deliver_one():
                 pass
             messages=smtp.return_value.send_message.call_args_list
-            self.assertEqual(len(messages),1)
+            self.assertEqual(len(messages),2)
             self.assertEqual(messages[0].kwargs["to_addrs"],["tech@example.org"])
+            self.assertEqual(messages[1].kwargs["to_addrs"],["registrar@example.org"])
+            self.assertNotIn("Main gate",messages[1].args[0].get_content())
             self.assertEqual(one("SELECT count(*) AS n FROM alerts WHERE issue=1")["n"],1)
         self.assertIn(b"Accepted by Gmail",admin.get("/").data)
 

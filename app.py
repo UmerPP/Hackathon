@@ -286,6 +286,7 @@ if __name__=="__main__":
             )
             if not updated.rowcount:
                 parser.error("No pending registrar account with that email.")
+            run("UPDATE alerts SET due=0 WHERE dept='Admin' AND state='pending' AND note='Waiting for an approved department account'")
             db().commit()
             print("Registrar access approved.")
     else:

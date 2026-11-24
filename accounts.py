@@ -175,6 +175,8 @@ def approve_account(account_id):
         if department not in DEPTS:
             abort(400)
     run("UPDATE users SET approved=1,dept=? WHERE id=?",department,account_id)
+    if department:
+        run("UPDATE alerts SET due=0 WHERE dept=? AND state='pending' AND note='Waiting for an approved department account'",department)
     db().commit()
     flash(f"{account['role']} access approved.")
     return redirect(url_for("home"))
@@ -216,5 +218,4 @@ def verify_email():
         return back("Incorrect email verification code.")
     run("DELETE FROM meta WHERE key=?",key)
     run("UPDATE users SET email_verified=1 WHERE id=?",user["id"])
-    run("UPDATE alerts SET due=0 WHERE state='pending' AND note='Sender or department inbox needs configuration'")
     return back("Email verified.")

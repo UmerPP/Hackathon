@@ -123,12 +123,16 @@ def deliver_one():
         return False
     cfg=settings()
     dept=alert["dept"]
-    recipient=(cfg.get("department_emails") or {}).get("Registrar" if dept=="Admin" else dept,"")
-    recipients=[recipient] if recipient else [r["name"] for r in rows(
-        "SELECT name FROM users WHERE email_verified=1 AND approved=1 AND role=? AND (?='Admin' OR dept=?)",
+    recipients=[account["name"] for account in rows(
+        """SELECT name FROM users WHERE approved=1 AND role=?
+        AND (?='Admin' OR dept=?) AND instr(name,'@')>0 ORDER BY id""",
         "Admin" if dept=="Admin" else "Staff",dept,dept)]
+    mailbox=(cfg.get("department_emails") or {}).get("Registrar" if dept=="Admin" else dept,"")
+    if not recipients and mailbox:
+        recipients=[mailbox]
     if not recipients or not cfg.get("smtp_user") or not cfg.get("smtp_app_password"):
-        run("UPDATE alerts SET due=?,note='Sender or department inbox needs configuration' WHERE id=?",now+60,alert["id"])
+        note="Waiting for an approved department account" if not recipients else "Gmail sender needs configuration"
+        run("UPDATE alerts SET due=?,note=? WHERE id=?",now+60,note,alert["id"])
         db().commit()
         return True
     run("UPDATE alerts SET state='sending',due=?,note='SMTP handoff in progress' WHERE id=?",now+120,alert["id"])
@@ -159,6 +163,13 @@ def deliver_one():
     return True
 
 def start_delivery(app):
+    with app.app_context():
+        # Recheck queued cases when an updated installation starts.
+        run("""UPDATE alerts SET due=0 WHERE state='pending'
+            AND note IN ('Sender or department inbox needs configuration',
+                         'Waiting for an approved department account','Gmail sender needs configuration')""")
+        db().commit()
+
     def loop():
         while True:
             try:
