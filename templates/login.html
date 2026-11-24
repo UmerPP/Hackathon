@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back" href="/login">← Choose account type</a>
+<h1>{{'Registrar' if role=='Admin' else 'Department staff' if role=='Staff' else role}} access<span>.</span></h1>
+{% if awaiting_code %}
+<section class="panel narrow">
+  <h2>Enter your authenticator code</h2>
+  <p>Open your authenticator app and enter the six digits for ReportFix.</p>
+  <form method="post">{{token()}}
+    <input type="hidden" name="action" value="otp">
+    <label>Authenticator code<input name="code" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus></label>
+    <button class="primary">Sign in</button>
+  </form>
+  <form method="post">{{token()}}<button class="quiet" name="action" value="cancel">Back to password</button></form>
+</section>
+{% else %}
+<div class="grid">
+  <section class="panel">
+    <h2>Sign in</h2>
+    <form method="post">{{token()}}
+      <input type="hidden" name="action" value="signin">
+      <label>Account email<input type="email" name="name" autocomplete="username" maxlength="254" required></label>
+      <label>Password<input type="password" name="password" autocomplete="current-password" maxlength="128" required></label>
+      <button class="primary">Sign in</button>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Create an account</h2>
+    <form method="post">{{token()}}
+      <input type="hidden" name="action" value="register">
+      <label>Email address<input type="email" name="name" autocomplete="username" maxlength="254" required></label>
+      <label>Choose a password (10+ characters)<input name="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+      <button>Create account</button>
+    </form>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

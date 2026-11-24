@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ReportFix · Campus desk</title><link rel="stylesheet" href="{{url_for('static',filename='desk.css')}}"></head><body>
+{% macro token() %}<input type="hidden" name="csrf" value="{{csrf}}">{% endmacro %}
+<header><a class="brand" href="/"><b>R<span>↗</span></b> ReportFix</a><div class="account">{% if user %}<span class="dot"></span>{{user.name}} <small>{{user.role}}</small>{% else %}Campus access{% endif %}</div></header>
+<div class="toasts" aria-live="polite">{% for msg in get_flashed_messages() %}<div role="status" class="toast">{{msg}} <button type="button" aria-label="Dismiss notification">×</button></div>{% endfor %}</div><script defer src="{{url_for('static',filename='toasts.js')}}"></script><main>{% block content %}{% endblock %}
+{% if user %}<form method="post" action="/logout">{{token()}}<button class="quiet">Sign out</button></form>{% endif %}</main></body></html>

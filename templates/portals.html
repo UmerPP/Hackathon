@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block content %}
+<h1>Campus sign-in<span>.</span></h1>
+<div class="portals">{% for slug,title,description in [('student','Student','Report a campus problem and verify repairs.'),('staff','Department staff','Work on reports assigned to your department.'),('admin','Registrar admin','Oversee cases, confidential reports and email delivery.')] %}
+<a href="/login/{{slug}}" class="card"><h2>{{title}}</h2><p>{{description}}</p><b>Sign in →</b></a>{% endfor %}</div>{% endblock %}

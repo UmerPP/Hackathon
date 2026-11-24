@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Set up your authenticator<span>.</span></h1>
+<section class="panel narrow">
+  <p>You’re signed in. Open your authenticator app, add an account, and scan this QR code. Keep the new ReportFix entry for your next sign-in.</p>
+  <img alt="Scan with an authenticator app" src="{{ url_for('auth.qr') }}" width="220" height="220">
+  <form method="post">{{token()}}<button class="primary">I’ve scanned it. Continue</button></form>
+</section>
+{% endblock %}
